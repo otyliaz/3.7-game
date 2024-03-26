@@ -1,3 +1,7 @@
+import tkinter as tk
+from tkinter import *
+from tkinter import ttk
+
 # make this a csv file
 # a list of dictionaries of locations
 LOCATIONS_DICT = [{"name": "A",
@@ -31,12 +35,12 @@ class Location:
 
     def __str__(self):
         """Returns a string containing the information for each location"""
-        return "You are at {}. {}. You can go to {}.".format(str(self.name),
-                                                             str(self.desc),
-                                                             ', '.join(
+        return "You are at {}. \n{}. \nYou can go to {}.".format(str(self.name),
+                                                                 str(self.desc),
+                                                                 ', '.join(
                                                                  str(dest) for dest in self.dests)
-                                                             # joins destinations with a comma
-                                                             )
+                                                                 # joins destinations with a comma
+                                                                 )
 
 
 locations = [Location(**location) for location in LOCATIONS_DICT]
@@ -86,10 +90,41 @@ class Player:
 
     def inspect(self, input_item):
         """not take, but pick up and look closely"""
-        pass
+        if input_item in self.current.loc.items:
+            pass
 
 
 player = Player([])
+
+
+# create tkinter window
+root = tk.Tk()
+
+# changes title of the window
+root.title('Game Window')
+
+# changes size of the window
+root.geometry('600x400')
+root.resizable(False, False)
+
+# create text widget and specify size.
+text = Text(root, height=5, width=52)
+text.pack()
+
+# insert text that i want to display
+text.insert('1.0', player.current_loc)
+# user can't edit the text
+text['state'] = 'disabled'
+
+move_button = ttk.Button(
+    root,
+    text='Move'
+)
+
+move_button.pack()
+
+# keeps the window displaying
+root.mainloop()
 
 # print(player.current_loc)
 # player.move("B")
