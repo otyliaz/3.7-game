@@ -116,42 +116,62 @@ main_text.insert('1.0', player.current_loc)
 # user can't edit the text
 main_text['state'] = 'disabled'
 
-button_frame = tk.Frame(root, highlightbackground="green",
-                        bg="blue", width=200, height=200)
-button_frame.pack()
+button_frame = tk.Frame(root)  # , bg="blue", width=200, height=200)
+button_frame.pack(side=BOTTOM, fill="y", expand=True)
 
 # ADD need to make a frame that has all the buttons in it so i can frame.clear() each time to clear the previous buttons
 # frame that has the text and the buttons. widget for text at top and frame for buttons under the text.
 # should use grid instead pack
 
 
-def move_button():
+def clear_button_frame():
+    for widgets in button_frame.winfo_children():  # .winfo_children gets each children widget of the frame
+        widgets.destroy()
+
+
+def tkinter_update_move(dest):
+    player.move(dest)
+    update_loc_text()
+    clear_button_frame()
+    create_main_move_button()
+
+
+def create_move_buttons():
     """"Makes separate buttons for each location. Runs after main move button is clicked"""
 
     for dest in player.current_loc.dests:
-        go_button = ttk.Button(
+        sub_move_button = ttk.Button(
             button_frame,
             text=f"move to {dest}",
             # dest=dest sets the variable before the loop repeats
-            command=lambda dest=dest: [player.move(dest), update_loc_text()]
+            command=lambda dest=dest: tkinter_update_move(dest)
         )
 
-        go_button.pack()
+        sub_move_button.pack()
 
 
 def update_loc_text():
     main_text.config(state='normal')  # enables the text widget
     # inserts new text at end of old text with 2 new lines
     main_text.insert('end', '\n\n' + str(player.current_loc))
+    main_text.config(state='disabled')  # re-disables the text widget
 
 
-# button for main move
-move_button = ttk.Button(
-    button_frame,
-    text='Move',
-    command=move_button  # command = creates new buttons for each direction
-)
-move_button.pack()
+def create_main_move_button():
+    # button for main move
+    main_move_button = ttk.Button(
+        button_frame,
+        text='Move',
+        # command = creates new buttons for each direction
+        command=lambda: [clear_button_frame(), create_move_buttons()]
+    )
+
+    main_move_button.pack()
+
+# TODO create a variable that shows if the button is clicked or not
+
+
+create_main_move_button()
 
 # keeps the tkinter window displaying
 root.mainloop()
