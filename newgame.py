@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
-
 # make this a csv file
 # a list of dictionaries of locations
 LOCATIONS_DICT = [{"name": "A",
@@ -87,10 +86,10 @@ class Player:
             player.inv.append(input_item)
             self.current_loc.items.remove(input_item)
 
-    def inspect(self, input_item):
-        """not take, but pick up and look closely"""
-        if input_item in self.current.loc.items:
-            pass
+    # def inspect(self, input_item):
+    # """not take, but pick up and look closely"""
+    # if input_item in self.current.loc.items:
+    # pass
         # TODO this
 
 
@@ -102,34 +101,49 @@ player = Player([])
 root = tk.Tk()
 
 # changes title of the window
-root.title('Game Window')
+root.title('Game Window')  # EDIT this
 
 # changes size of the window
 root.geometry('600x400')
-root.resizable(False, False)
+root.resizable(True, True)
 
 # create text widget and specify size
-main_text = Text(root, height=10, width=52, fg="blue")
-main_text.pack()
+main_text = Text(root, fg="blue", height="1px")
+# place at row0, sticky="nsew" makes it fill the whole grid
+main_text.grid(row=0, column=0, sticky="nsew")
 # insert text that i want to display
 main_text.insert('1.0', player.current_loc)
 # user can't edit the text
 main_text['state'] = 'disabled'
 
-button_frame = tk.Frame(root)  # , bg="blue", width=200, height=200)
-button_frame.pack(side=BOTTOM, fill="y", expand=True)
+# create a vertical scrollbar for the text box next to it
+text_scrollbar = Scrollbar(root, orient="vertical", command=main_text.yview)
+# sticks the scrollbar to north and south of its grid
+text_scrollbar.grid(row=0, column=1, sticky="ns")
 
-# ADD need to make a frame that has all the buttons in it so i can frame.clear() each time to clear the previous buttons
-# frame that has the text and the buttons. widget for text at top and frame for buttons under the text.
-# should use grid instead pack
+# configure the text widget to use the scrollbar
+main_text.config(yscrollcommand=text_scrollbar.set)
+
+# create frame around buttons
+button_frame = tk.Frame(root, bg="light grey")
+button_frame.grid(row=1, column=0, columnspan=2, sticky="nsew")
+
+# makes text row and buttons row the same ratio
+root.grid_rowconfigure(0, weight=1)
+root.grid_rowconfigure(1, weight=1)
+
+# gives the text column (column0) priority over the scrollbar column
+root.grid_columnconfigure(0, weight=1)
 
 
 def clear_button_frame():
-    for widgets in button_frame.winfo_children():  # .winfo_children gets each children widget of the frame
-        widgets.destroy()
+    """Clears the button frame after a button is clicked"""
+    for widget in button_frame.winfo_children():  # .winfo_children gets each children widget of the frame
+        widget.destroy()
 
 
 def tkinter_update_move(dest):
+    """Moves player when button is clicked, adds new text, and replaces buttons"""
     player.move(dest)
     update_loc_text()
     clear_button_frame()
@@ -151,14 +165,16 @@ def create_move_buttons():
 
 
 def update_loc_text():
+    """Adds new text to the main text box when the player moves."""
     main_text.config(state='normal')  # enables the text widget
     # inserts new text at end of old text with 2 new lines
     main_text.insert('end', '\n\n' + str(player.current_loc))
+    main_text.see('end')  # scrolls to end of text box
     main_text.config(state='disabled')  # re-disables the text widget
 
 
 def create_main_move_button():
-    # button for main move
+    """Creates main move button"""
     main_move_button = ttk.Button(
         button_frame,
         text='Move',
@@ -166,11 +182,10 @@ def create_main_move_button():
         command=lambda: [clear_button_frame(), create_move_buttons()]
     )
 
-    main_move_button.pack()
-
-# TODO create a variable that shows if the button is clicked or not
+    main_move_button.pack(anchor="center")
 
 
+# creates main move button
 create_main_move_button()
 
 # keeps the tkinter window displaying
