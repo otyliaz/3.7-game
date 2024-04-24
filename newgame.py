@@ -1,21 +1,48 @@
 import tkinter as tk
 from tkinter import *
-from tkinter import ttk
+
 # make this a csv file
 # a list of dictionaries of locations
-LOCATIONS_DICT = [{"name": "A",
-                   "desc": "the town hall",
-                   "dests": ["B", "C"],
-                   "items": []},
-                  {"name": "B",
-                   "desc": "the crime scene",
-                   "dests": ["A"],
-                   "items": ["Knife"]},
-                  {"name": "C",
-                   "desc": "another place",
-                   "dests": ["B"],
-                   "items": []}
-                  ]
+LOCATIONS_DICT = [
+    {
+        "name": "cell",
+        "desc": "Your prison cell. It contains a sink, a toilet, your bed, a desk, and a chair. Outside of your cell is the prison hallway.",
+        "dests": ["hallway"],
+        "inspectables": {"sink": "The sink is made of stainless steel and has a leaky faucet.",
+                         "bed": "Under the mattress, you find a crudely made steel crowbar. It is wide and thin, seemingly left behind by whoever previously lived in your cell.",
+                         "desk": "It is a simple wooden table bolted to the walls.",
+                         "chair": "The wooden chair is bolted to the floor."},
+        "items": ["crowbar"]
+    },
+    {
+        "name": "hallway",
+        "desc": "A dimly lit hallway with doors leading to different areas of the prison.",
+        "dests": ["cafeteria", "yard", "cell"],
+        "inspectables": {},
+        "items": []
+    },
+    {
+        "name": "cafeteria",
+        "desc": "The prison cafeteria.",
+        "dests": ["hallway"],
+        "inspectables": {},
+        "items": ["bread"]
+    },
+    {
+        "name": "yard",
+        "desc": "An enclosed outdoor area surrounded by barbed wire, where inmates get their daily exercise.",
+        "dests": ["hallway"],
+        "inspectables": {},
+        "items": []
+    },
+    {
+        "name": "workshop",
+        "desc": "A noisy room for manual labour.",
+        "dests": ["hallway"],
+        "inspectables": {},
+        "items": []
+    }
+]
 
 # what's the point of this
 
@@ -30,15 +57,16 @@ class Map:
 class Location:
     """A class for locations. Stores location name, description, destinations, items."""
 
-    def __init__(self, name, desc, dests, items):
+    def __init__(self, name, desc, dests, inspectables, items):
         self.name = name
         self.desc = desc
         self.dests = dests
+        self.inspectables = inspectables
         self.items = items
 
     def __str__(self):
         """Returns a string containing the information for each location"""
-        return f"You are at {str(self.name)}. \n{str(self.desc)}. \nYou can go to {', '.join(str(dest) for dest in self.dests)}."
+        return f"You are at {str(self.name)}. \n{str(self.desc)} \nYou can go to {', '.join(str(dest) for dest in self.dests)}."
 
 
 locations = [Location(**location) for location in LOCATIONS_DICT]
@@ -55,7 +83,7 @@ def get_loc(input_loc):
 
 
 # player's starting location
-START_LOC = get_loc("A")
+START_LOC = get_loc("cell")
 
 
 class Player:
@@ -86,11 +114,10 @@ class Player:
             player.inv.append(input_item)
             self.current_loc.items.remove(input_item)
 
-    # def inspect(self, input_item):
-    # """not take, but pick up and look closely"""
-    # if input_item in self.current.loc.items:
-    # pass
-        # TODO this
+    def inspect(self, input_item):
+        """Prints out more information about an item in the location."""
+        if input_item in self.current_loc.inspectables:
+            print(self.current_loc.inspectables[input_item])
 
 
 player = Player([])
@@ -101,16 +128,19 @@ player = Player([])
 root = tk.Tk()
 
 # changes title of the window
-root.title('Game Window')  # EDIT this
+root.title('⛓️👮 Prison Escape! 👮⛓️')  # EDIT this
+
+img = PhotoImage(file='siren.png')
+root.iconphoto(True, img)
 
 # changes size of the window
 root.geometry('600x400')
 root.resizable(True, True)
 
 # create text widget and specify size
-main_text = Text(root, fg="blue", height="1px")
+main_text = Text(root, fg="blue", height=1)  # height is 1px
 # place at row0, sticky="nsew" makes it fill the whole grid
-main_text.grid(row=0, column=0, sticky="nsew")
+main_text.grid(row=0, column=0, sticky="nsew", columnspan=2)
 # insert text that i want to display
 main_text.insert('1.0', player.current_loc)
 # user can't edit the text
@@ -119,21 +149,29 @@ main_text['state'] = 'disabled'
 # create a vertical scrollbar for the text box next to it
 text_scrollbar = Scrollbar(root, orient="vertical", command=main_text.yview)
 # sticks the scrollbar to north and south of its grid
-text_scrollbar.grid(row=0, column=1, sticky="ns")
+text_scrollbar.grid(row=0, column=2, sticky="ns")
+
+# FIX add padding to the text box, and wording of the text
 
 # configure the text widget to use the scrollbar
 main_text.config(yscrollcommand=text_scrollbar.set)
 
 # create frame around buttons
 button_frame = tk.Frame(root, bg="light grey")
-button_frame.grid(row=1, column=0, columnspan=2, sticky="nsew")
+button_frame.grid(row=1, column=0, sticky="nsew")
 
-# makes text row and buttons row the same ratio
+# entry is a one line text input widget
+entry = Entry(root, )
+entry.grid(row=1, column=1, columnspan=2, sticky="ew")
+
+# -----------------ratios/weights of grid---------
+# keeps text row and buttons row the same ratio when resizing window
 root.grid_rowconfigure(0, weight=1)
 root.grid_rowconfigure(1, weight=1)
 
 # gives the text column (column0) priority over the scrollbar column
 root.grid_columnconfigure(0, weight=1)
+root.grid_columnconfigure(1, weight=1)
 
 
 def clear_button_frame():
@@ -153,15 +191,20 @@ def tkinter_update_move(dest):
 def create_move_buttons():
     """"Makes separate buttons for each location. Runs after main move button is clicked"""
 
-    for dest in player.current_loc.dests:
-        sub_move_button = ttk.Button(
+    num_buttons = len(player.current_loc.dests)
+    button_height = 1 / num_buttons
+
+    for i, dest in enumerate(player.current_loc.dests):
+        rely_value = (i + 0.5) * button_height  # Center each button vertically
+        sub_move_button = tk.Button(
             button_frame,
             text=f"move to {dest}",
-            # dest=dest sets the variable before the loop repeats
             command=lambda dest=dest: tkinter_update_move(dest)
         )
 
-        sub_move_button.pack()
+        # Place the button with adjusted rely value
+        sub_move_button.place(relx=0.5, rely=rely_value,
+                              relwidth=1, relheight=button_height, anchor="c")
 
 
 def update_loc_text():
@@ -175,14 +218,15 @@ def update_loc_text():
 
 def create_main_move_button():
     """Creates main move button"""
-    main_move_button = ttk.Button(
+    main_move_button = tk.Button(
         button_frame,
         text='Move',
         # command = creates new buttons for each direction
         command=lambda: [clear_button_frame(), create_move_buttons()]
     )
 
-    main_move_button.pack(anchor="center")
+    # main_move_button.place(relx=.5, rely=.5, anchor="c") #centres the move button in its grid
+    main_move_button.pack(fill=BOTH, expand=True, padx=10, pady=10)
 
 
 # creates main move button
