@@ -6,7 +6,7 @@ from tkinter import *
 LOCATIONS_DICT = [
     {
         "name": "cell",
-        "desc": "Your prison cell. It contains a sink, a toilet, your bed, a desk, and a chair. Outside of your cell is the prison hallway.",
+        "desc": "Your prison cell. It contains a sink, a toilet, your bed, a desk, and a chair. Your cell door is open and it leads to the prison hallway.",
         "dests": ["hallway"],
         "inspectables": {"sink": "The sink is made of stainless steel and has a leaky faucet.",
                          "bed": "Under the mattress, you find a crudely made steel crowbar. It is wide and thin, seemingly left behind by whoever previously lived in your cell.",
@@ -16,31 +16,40 @@ LOCATIONS_DICT = [
     },
     {
         "name": "hallway",
-        "desc": "A dimly lit hallway with doors leading to different areas of the prison.",
-        "dests": ["cafeteria", "yard", "cell"],
-        "inspectables": {},
+        "desc": "A dimly lit hallway leading to different areas of the prison, as well as doors leading to other cells. You can see the cafeteria to the north and the workshop to the south. The door to your cell is to the west.",
+        "dests": ["cafeteria", "workshop", "cell"],
+        "inspectables": {"door": "You try the door to another inmate's cell, but it is locked."},
         "items": []
     },
     {
         "name": "cafeteria",
-        "desc": "The prison cafeteria.",
-        "dests": ["hallway"],
-        "inspectables": {},
-        "items": ["bread"]
+        "desc": "The prison cafeteria. To the east is a door leading to the courtyard, and the hallway is to the south. Directly to the north is the kitchen.",
+        "dests": ["hallway", "yard"],
+        "inspectables": {"bread": "A stale piece of bread.",
+                         "soup": "Watery, tasteless soup.",
+                         "meat": "A slimy piece of unidentifiable meat."},
+        "items": ["bread", "meat"]
     },
     {
         "name": "yard",
-        "desc": "An enclosed outdoor area surrounded by barbed wire, where inmates get their daily exercise.",
-        "dests": ["hallway"],
+        "desc": "An enclosed outdoor area surrounded by barbed wire, where inmates get their daily exercise. There is a passage leading to the cafeteria to the west.",
+        "dests": ["cafeteria"],
         "inspectables": {},
         "items": []
     },
     {
+        "name": "kitchen",
+        "desc": "The kitchen is supervised by guards while inmates are working frantically, rushing to cook meals out for the others. There are rows of kitchen counters, along with multiple stoves and ovens. To the south, the cafeteria is directly connected.",
+        "dests": ["cafeteria"],
+        "inspectables": {"counter": "On the counter, there is an empty chopping board and a vegetable knife.", "stove": "Your average cooking stovetop.", "oven": "The ovens are filled with trays of food."},
+        "items": ["knife", "chopping board"]
+    },
+    {
         "name": "workshop",
-        "desc": "A noisy room for manual labour.",
+        "desc": "A noisy room full of labour. You can hear machinery sounds in the background as inmates work on projects under the supervision of guards. The hallway is to the north.",
         "dests": ["hallway"],
-        "inspectables": {},
-        "items": []
+        "inspectables": {"machine": "Out of all the old, creaky machines, you notice welding machines, sewing machines, drills, and saws."},
+        "items": ["drill", "saw"]
     }
 ]
 
@@ -128,7 +137,7 @@ player = Player([])
 root = tk.Tk()
 
 # changes title of the window
-root.title('⛓️👮 Prison Escape! 👮⛓️')  # EDIT this
+root.title('⛓️👮 Prison Escape! 👮⛓️')
 
 img = PhotoImage(file='siren.png')
 root.iconphoto(True, img)
@@ -138,7 +147,8 @@ root.geometry('600x400')
 root.resizable(True, True)
 
 # create text widget and specify size
-main_text = Text(root, fg="blue", height=1)  # height is 1px
+# min height is 1px so the textbox will fill remaining space in grid
+main_text = Text(root, fg="blue", height=1, padx=10, pady=5)
 # place at row0, sticky="nsew" makes it fill the whole grid
 main_text.grid(row=0, column=0, sticky="nsew", columnspan=2)
 # insert text that i want to display
@@ -151,13 +161,13 @@ text_scrollbar = Scrollbar(root, orient="vertical", command=main_text.yview)
 # sticks the scrollbar to north and south of its grid
 text_scrollbar.grid(row=0, column=2, sticky="ns")
 
-# FIX add padding to the text box, and wording of the text
+# FIX the wording of the text
 
 # configure the text widget to use the scrollbar
 main_text.config(yscrollcommand=text_scrollbar.set)
 
 # create frame around buttons
-button_frame = tk.Frame(root, bg="light grey")
+button_frame = tk.Frame(root, bg="light grey", padx=10, pady=10)
 button_frame.grid(row=1, column=0, sticky="nsew")
 
 # entry is a one line text input widget
@@ -191,20 +201,25 @@ def tkinter_update_move(dest):
 def create_move_buttons():
     """"Makes separate buttons for each location. Runs after main move button is clicked"""
 
-    num_buttons = len(player.current_loc.dests)
-    button_height = 1 / num_buttons
+    # makes buttons evenly sized in the frame
+    rel_height = 1 / len(player.current_loc.dests)
 
+    # for each destination,
+    # enumerate returns (button number, destination)
     for i, dest in enumerate(player.current_loc.dests):
-        rely_value = (i + 0.5) * button_height  # Center each button vertically
+        # offset value for each button so they can stack on top of each other
+        # for example, if there are 2 buttons, the first will be offset by 0.25,
+        # and the second will be by 0.75, which positions them both with equal spacing
+        rely_value = (i + 0.5) * rel_height
         sub_move_button = tk.Button(
             button_frame,
             text=f"move to {dest}",
+            # dest=dest sets the variable before the loop repeats
             command=lambda dest=dest: tkinter_update_move(dest)
         )
 
-        # Place the button with adjusted rely value
         sub_move_button.place(relx=0.5, rely=rely_value,
-                              relwidth=1, relheight=button_height, anchor="c")
+                              relwidth=1, relheight=rel_height, anchor=CENTER)
 
 
 def update_loc_text():
@@ -226,7 +241,7 @@ def create_main_move_button():
     )
 
     # main_move_button.place(relx=.5, rely=.5, anchor="c") #centres the move button in its grid
-    main_move_button.pack(fill=BOTH, expand=True, padx=10, pady=10)
+    main_move_button.pack(fill=BOTH, expand=True)
 
 
 # creates main move button
