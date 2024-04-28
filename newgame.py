@@ -11,7 +11,8 @@ LOCATIONS_DICT = [
         "inspectables": {"sink": "The sink is made of stainless steel and has a leaky faucet.",
                          "bed": "Under the mattress, you find a crudely made steel crowbar. It is wide and thin, seemingly left behind by whoever previously lived in your cell.",
                          "desk": "It is a simple wooden table bolted to the walls.",
-                         "chair": "The wooden chair is bolted to the floor."},
+                         "chair": "The wooden chair is bolted to the floor.",
+                         "door": "You see nothing special about the door."},
         "items": ["crowbar"]
     },
     {
@@ -23,25 +24,29 @@ LOCATIONS_DICT = [
     },
     {
         "name": "cafeteria",
-        "desc": "The prison cafeteria. To the east is a door leading to the courtyard, and the hallway is to the south. Directly to the north is the kitchen.",
-        "dests": ["hallway", "yard"],
+        "desc": "The prison cafeteria. It is filled with people lining up to get their daily serving of food. You are served some unappetising bread, meat, and soup. To the east is a door leading to the courtyard, and the hallway is to the south. Directly to the north is the kitchen.",
+        "dests": ["hallway", "yard", "kitchen"],
         "inspectables": {"bread": "A stale piece of bread.",
                          "soup": "Watery, tasteless soup.",
-                         "meat": "A slimy piece of unidentifiable meat."},
+                         "meat": "A slimy piece of unidentifiable meat.",
+                         "door": "You see nothing special about the door.",
+                         "food": "You are served some unappetising bread, meat, and soup."},
         "items": ["bread", "meat"]
     },
     {
         "name": "yard",
-        "desc": "An enclosed outdoor area surrounded by barbed wire, where inmates get their daily exercise. There is a passage leading to the cafeteria to the west.",
+        "desc": "An enclosed outdoor area surrounded by a barbed wire fence, where inmates get their daily exercise. There are a group of inmates gathered around, talking. There is a passage leading to the cafeteria to the west.",
         "dests": ["cafeteria"],
-        "inspectables": {},
+        "inspectables": {"fence": "You notice a small hole under the fence, but it is a little bit too small for your body to fit through."},
         "items": []
     },
     {
         "name": "kitchen",
         "desc": "The kitchen is supervised by guards while inmates are working frantically, rushing to cook meals out for the others. There are rows of kitchen counters, along with multiple stoves and ovens. To the south, the cafeteria is directly connected.",
         "dests": ["cafeteria"],
-        "inspectables": {"counter": "On the counter, there is an empty chopping board and a vegetable knife.", "stove": "Your average cooking stovetop.", "oven": "The ovens are filled with trays of food."},
+        "inspectables": {"counter": "On the counter, there is an empty chopping board and a vegetable knife.",
+                         "stove": "Your average cooking stovetop.",
+                         "oven": "The ovens are filled with trays of food."},
         "items": ["knife", "chopping board"]
     },
     {
@@ -75,7 +80,8 @@ class Location:
 
     def __str__(self):
         """Returns a string containing the information for each location"""
-        return f"You are at {str(self.name)}. \n{str(self.desc)} \nYou can go to {', '.join(str(dest) for dest in self.dests)}."
+        return f"You are at {str(self.name)}. \n{str(self.desc)}"
+    # \nYou can go to {', '.join(str(dest) for dest in self.dests)}.
 
 
 locations = [Location(**location) for location in LOCATIONS_DICT]
@@ -122,11 +128,18 @@ class Player:
         if input_item in self.current_loc.items:
             player.inv.append(input_item)
             self.current_loc.items.remove(input_item)
+            return f"You pick up the {input_item} and put it in your pocket."
+
+        else:
+            return "You can't take any such thing."
 
     def inspect(self, input_item):
         """Prints out more information about an item in the location."""
         if input_item in self.current_loc.inspectables:
-            print(self.current_loc.inspectables[input_item])
+            return self.current_loc.inspectables[input_item]
+
+        else:
+            return f"You can't see any such thing."
 
 
 player = Player([])
@@ -148,7 +161,7 @@ root.resizable(True, True)
 
 # create text widget and specify size
 # min height is 1px so the textbox will fill remaining space in grid
-main_text = Text(root, fg="blue", height=1, padx=10, pady=5)
+main_text = Text(root, fg="blue", height=1, padx=10, pady=5, wrap="word")
 # place at row0, sticky="nsew" makes it fill the whole grid
 main_text.grid(row=0, column=0, sticky="nsew", columnspan=2)
 # insert text that i want to display
@@ -166,36 +179,132 @@ text_scrollbar.grid(row=0, column=2, sticky="ns")
 # configure the text widget to use the scrollbar
 main_text.config(yscrollcommand=text_scrollbar.set)
 
-# create frame around buttons
-button_frame = tk.Frame(root, bg="light grey", padx=10, pady=10)
-button_frame.grid(row=1, column=0, sticky="nsew")
+# create frame around move buttons
+move_frame = tk.Frame(root, bg="light grey", padx=10, pady=10)
+move_frame.grid(row=1, column=0, sticky="nsew", rowspan=2)
+
+# create frame around entry input boxes
+entry_frame = tk.Frame(root)
+entry_frame.grid(row=1, column=1, columnspan=2, sticky="new")
+
+
+def inspect_action():
+    """Updates the main text box when the player inspects something."""
+    inspect_input = inspect_entry.get().lower()
+
+    if inspect_input:
+        update_text(player.inspect(inspect_input))
+    else:
+        update_text("Please enter an item to inspect.")
+
+    inspect_entry.delete(0, 'end')
+
+
+inspect_frame = tk.Frame(entry_frame)
+inspect_frame.pack(side="top")
 
 # entry is a one line text input widget
-entry = Entry(root, )
-entry.grid(row=1, column=1, columnspan=2, sticky="ew")
+inspect_entry = Entry(inspect_frame)
+inspect_entry.pack(side="left")
+
+inspect_btn = Button(inspect_frame, text="Inspect!", command=inspect_action)
+inspect_btn.pack(side="right")
+
+# TODO inventory
+
+
+def take_action():
+    """Updates the main text box ***and inventory*** when the player takes something."""
+    take_input = take_entry.get().lower()
+    result = player.take(take_input)
+    update_text(result)
+    inv_text_update()
+    take_entry.delete(0, 'end')
+
+
+take_frame = tk.Frame(entry_frame)
+take_frame.pack()
+
+take_entry = Entry(take_frame)
+take_entry.pack(side="left")
+
+take_btn = Button(take_frame, text="Take!", command=take_action)
+take_btn.pack(side="right")
+
+inv_frame = tk.Frame(root)
+inv_frame.grid(row=2, column=1, columnspan=2)
+
+inv_heading_label = Label(inv_frame, text="Your Inventory:")
+inv_heading_label.pack()
+
+inv_text = Text(inv_frame, width=2, height=2,
+                highlightthickness=0, borderwidth=0, bg="white", wrap="word")
+inv_text.pack(fill='both')
+inv_text.insert('1.0', """Your Inventory: """)
+
+
+def inv_text_update():
+    """Updates the inventory box when a new item is added"""
+    inv_text.config(state="normal")
+    inv_text.delete("1.0", "end")
+
+    if player.inv:
+        for item in player.inv:
+            inv_text.insert(END, item.title() + "\n")
+    else:
+        inv_text.insert(END, "Your inventory is empty.")
+
+    inv_text.config(state="disabled")
+
+
+inv_text_update()
+inv_text.config(state="disabled")
 
 # -----------------ratios/weights of grid---------
 # keeps text row and buttons row the same ratio when resizing window
 root.grid_rowconfigure(0, weight=1)
-root.grid_rowconfigure(1, weight=1)
+root.grid_rowconfigure(1, weight=0)
+root.grid_rowconfigure(2, weight=1)
 
 # gives the text column (column0) priority over the scrollbar column
 root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=1)
 
 
-def clear_button_frame():
-    """Clears the button frame after a button is clicked"""
-    for widget in button_frame.winfo_children():  # .winfo_children gets each children widget of the frame
+def clear_move_frame():
+    """Clears the move button frame after a button is clicked"""
+    for widget in move_frame.winfo_children():  # .winfo_children gets each children widget of the frame
         widget.destroy()
+
+
+def update_text(new_string):
+    """Adds new text to the main text box."""
+    main_text.config(state='normal')  # enables the text widget
+    # inserts new text at end of old text with 2 new lines
+    main_text.insert('end', '\n\n' + str(new_string))
+    main_text.see('end')  # scrolls to end of text box
+    main_text.config(state='disabled')  # re-disables the text widget
 
 
 def tkinter_update_move(dest):
     """Moves player when button is clicked, adds new text, and replaces buttons"""
     player.move(dest)
-    update_loc_text()
-    clear_button_frame()
+    update_text(player.current_loc)
+    clear_move_frame()
     create_main_move_button()
+
+
+def create_main_move_button():
+    """Creates main move button"""
+    main_move_button = tk.Button(
+        move_frame,
+        text='Move',
+        # command = creates new buttons for each direction
+        command=lambda: [clear_move_frame(), create_move_buttons()]
+    )
+
+    # main_move_button.place(relx=.5, rely=.5, anchor="c") #centres the move button in its grid
+    main_move_button.pack(fill=BOTH, expand=True)
 
 
 def create_move_buttons():
@@ -212,7 +321,7 @@ def create_move_buttons():
         # and the second will be by 0.75, which positions them both with equal spacing
         rely_value = (i + 0.5) * rel_height
         sub_move_button = tk.Button(
-            button_frame,
+            move_frame,
             text=f"move to {dest}",
             # dest=dest sets the variable before the loop repeats
             command=lambda dest=dest: tkinter_update_move(dest)
@@ -220,28 +329,6 @@ def create_move_buttons():
 
         sub_move_button.place(relx=0.5, rely=rely_value,
                               relwidth=1, relheight=rel_height, anchor=CENTER)
-
-
-def update_loc_text():
-    """Adds new text to the main text box when the player moves."""
-    main_text.config(state='normal')  # enables the text widget
-    # inserts new text at end of old text with 2 new lines
-    main_text.insert('end', '\n\n' + str(player.current_loc))
-    main_text.see('end')  # scrolls to end of text box
-    main_text.config(state='disabled')  # re-disables the text widget
-
-
-def create_main_move_button():
-    """Creates main move button"""
-    main_move_button = tk.Button(
-        button_frame,
-        text='Move',
-        # command = creates new buttons for each direction
-        command=lambda: [clear_button_frame(), create_move_buttons()]
-    )
-
-    # main_move_button.place(relx=.5, rely=.5, anchor="c") #centres the move button in its grid
-    main_move_button.pack(fill=BOTH, expand=True)
 
 
 # creates main move button
