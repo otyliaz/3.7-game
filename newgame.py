@@ -1,3 +1,6 @@
+"""This is my game for NCEA Level 3 Digital Technologies 3.7 91906 by OTYLIA ZENG
+"""
+
 import tkinter as tk
 from tkinter import *
 
@@ -16,7 +19,7 @@ LOCATIONS_DICT = [
         "items": []  # adds crowbar when bed is inspected
      },
     {"name": "dorm",
-        "desc": "You are in the dormitory, a large room with many doors leading to the rooms of other prisonners. The door to your cell is to the west and the main hallway is to the east.",
+        "desc": "You are in the dormitory, a large room with many doors leading to the rooms of other prisoners. The door to your cell is to the west and the main hallway is to the east.",
         "dests": ["cell", "hallway"],
         "inspectables": {"door": "You try the door to another inmate's cell, but it is locked."},
         "items": []
@@ -43,7 +46,7 @@ LOCATIONS_DICT = [
         "name": "yard",
         "desc": "You are in the courtyard, an enclosed outdoor area surrounded by a barbed wire fence where you can get your daily exercise. There are a group of inmates gathered around, gossiping. There is a passage leading to the cafeteria to the west.",
         "dests": ["cafeteria"],
-        "inspectables": {"fence": "You notice a small hole under the fence, but it is a little bit too small for your body to fit through."},
+        "inspectables": {"fence": "You notice a small hole under the fence, but it is a little bit too small for your body to fit through. There is a security guard watching over the prisoners."},
         "items": []
     },
     {
@@ -64,8 +67,6 @@ LOCATIONS_DICT = [
     }
 ]
 
-# ADD shold add an inspected thing in locations
-
 
 class Location:
     """A class for locations. Stores location name, description, destinations, items."""
@@ -78,7 +79,7 @@ class Location:
         self.items = items
 
     def __str__(self):
-        """Returns a string containing the information for each location"""
+        """Returns a string containing the information for each location."""
         return f"You are in the {str(self.name)}. \n{str(self.desc)}"
     # \nYou can go to {', '.join(str(dest) for dest in self.dests)}.
 
@@ -107,7 +108,7 @@ locations = [Location(**location) for location in LOCATIONS_DICT]
 
 
 def get_loc(input_loc):
-    """Gets a location object for the name of location"""
+    """Gets a location object for the name of location."""
     for location in locations:
         if location.name == input_loc:
             return location
@@ -146,8 +147,7 @@ class Player:
             return "That is not a valid move."
 
     def take(self, input_item):
-        """If the input item matches an item in the location, 
-        append the item to the player inventory and remove from location items"""
+        """If the input item matches an item in the location, append the item to the player inventory and remove from location items."""
         if input_item in self.inv:
             return "You already have this item!"
 
@@ -205,8 +205,8 @@ root.minsize(500, 400)
 root.resizable(True, True)
 
 
-def game():
-    """main function for game"""
+def main():
+    """Runs the game."""
 
     for widget in root.winfo_children():
         widget.destroy()
@@ -295,16 +295,17 @@ def game():
 
     inv_frame = tk.Frame(root)
     inv_frame.grid(row=2, column=1, sticky="nswe")
+    inv_frame.grid_propagate(False)
 
     inv_heading_label = Label(
         inv_frame, text="Click to Use an Item in Your Inventory:")
-    inv_heading_label.pack()
-
+    inv_heading_label.grid(row=0, sticky="nwe")
+# FIX HELP idk why the label is to the left
     inv_items_frame = tk.Frame(inv_frame)
-    inv_items_frame.pack()
+    inv_items_frame.grid(row=1)
 
     def use_action(item):
-        """Updates main text and inventory when the player uses an item"""
+        """Updates main text and inventory when the player uses an item."""
 
         result = player.use(item)
 
@@ -320,18 +321,23 @@ def game():
         update_inv_display()
 
     def update_inv_display():
-        """Updates inventory display when an item is used or taken"""
+        """Updates inventory display when an item is used or taken."""
 
         for widget in inv_items_frame.winfo_children():
             widget.destroy()
 
-        for item in player.inv:
+        # for item in player.inv:
+        #     item_button = Button(inv_items_frame, text=item.title(),
+        #                          command=lambda item=item: use_action(item))
+        #     item_button.pack(side=LEFT)
+
+        for i, item in enumerate(player.inv):
             item_button = Button(inv_items_frame, text=item.title(),
                                  command=lambda item=item: use_action(item))
-            item_button.pack()
+            item_button.grid(row=0, column=i, sticky="ns", padx=5)
 
     def clear_move_frame():
-        """Clears the move button frame after a button is clicked"""
+        """Clears the move button frame after a button is clicked."""
         for widget in move_frame.winfo_children():  # .winfo_children gets each children widget of the frame
             widget.destroy()
 
@@ -344,7 +350,7 @@ def game():
         main_text.config(state='disabled')  # re-disables the text widget
 
     def tkinter_update_move(dest):
-        """Moves player when button is clicked, adds new text, and replaces buttons"""
+        """Moves player when button is clicked, adds new text, and replaces buttons."""
         player.move(dest)
         update_text(player.current_loc)
         clear_move_frame()
@@ -363,7 +369,7 @@ def game():
         main_move_button.pack(fill=BOTH, expand=True)
 
     def create_move_buttons():
-        """"Makes separate buttons for each location. Runs after main move button is clicked"""
+        """"Makes separate buttons for each location. Runs after main move button is clicked."""
 
         # makes buttons evenly sized in the frame
         rel_height = 1 / len(player.current_loc.dests)
@@ -400,25 +406,36 @@ def game():
 
 
 def start_window():
-    """The starting screen"""
+    """The starting screen."""
 
-    # ADD description of game
-    start_button = Button(root, text="Start the game!", command=game)
-    start_button.pack(anchor=CENTER, expand=True)
+    description_label = tk.Label(
+        root, text="Welcome to Prison Escape!\n\n"
+        "You have been unjustfully imprisoned at the local prison with a life sentence."
+        "\nExplore the prison and use anything around you to find your way out!",
+        font=("Helvetica", 14), wraplength=500)
+    description_label.place(relx=0.5, rely=0.3, anchor=CENTER)
+
+    start_button = Button(root, text="PLAY NOW!", font=(
+        "Helvetica", 14), bg="#4CAF50", fg="white", padx=10, pady=5, activebackground="#45a049", activeforeground="white", command=main)
+    start_button.place(relx=0.5, rely=0.6, anchor=CENTER)
 
 
 def win_window():
-    """The win screen"""
+    """The win screen."""
 
     for widget in root.winfo_children():
         widget.destroy()
 
-    win_text = Text(root, highlightthickness=0, borderwidth=0, wrap="word")
-    win_text.pack(anchor=CENTER, expand=True)
-    win_text.insert('1.0', """You successfully dig your way out of the prison yard using the crowbar. 
-As you emerge into the night, you take a deep breath of freedom, feeling the cool air on your face for the first time in years. 
-You are now a free person, ready to start a new chapter in your life. Well done, you win!""")
-    win_text.config(state="disabled")
+    win_label = tk.Label(
+        root, text="Congratulations, You Win!", font=("Helvetica", 20), fg="green")
+    win_label.place(relx=0.5, rely=0.2, anchor=CENTER)
+
+    win_text = tk.Label(
+        root, text="You seize this moment to dig under the fence with your crowbar, enlargening the hole. "
+        "After a few tense moments, you succeed, and with a final effort, you squeeze through to the other side. "
+        "As you emerge into the night, you take a deep breath of freedom, feeling the cool air on your face for the first time in years. "
+        "You are now a free person, ready to start a new chapter in your life. Well done, you win!", font=("Helvetica", 14), wraplength=400)
+    win_text.place(relx=0.5, rely=0.6, anchor=CENTER)
 
 
 def lose_window():
@@ -427,15 +444,16 @@ def lose_window():
     for widget in root.winfo_children():
         widget.destroy()
 
-    win_text = Text(root, highlightthickness=0, borderwidth=0, wrap="word")
-    win_text.pack(anchor=CENTER, expand=True)
-    win_text.insert(
-        '1.0', """Unfortunately, the guard catches you trying to escape. 
-        He knocks you unconscious and drags you back to your cell. Better luck next time!""")
-    win_text.config(state="disabled")
+    lose_label = tk.Label(
+        root, text="Game Over, You Lose!", font=("Helvetica", 20), fg="red")
+    lose_label.place(relx=0.5, rely=0.2, anchor=CENTER)
 
-    start_button = Button(root, text="Start the game!", command=game)
-    start_button.pack(anchor=CENTER, expand=True)
+    lose_text = tk.Label(
+        root, text="You start to use your crowbar to dig at the hole under the fence. Unfortunately, the guard catches you trying to escape. He knocks you unconscious and drags you back to your cell. Better luck next time!", font=("Helvetica", 14), wraplength=400)
+    lose_text.place(relx=0.5, rely=0.6, anchor=CENTER)
+
+    # start_button = Button(root, text="Start the game!", command=game)
+    # start_button.pack(anchor=CENTER, expand=True)
 
 
 start_window()
