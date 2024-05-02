@@ -1,15 +1,13 @@
-"""This is my game for NCEA Level 3 Digital Technologies 3.7 91906 by OTYLIA ZENG
+"""This is my game for NCEA Level 3 Digital Technologies 3.7 91906 by OTYLIA ZENG.
 """
 
 import tkinter as tk
-from tkinter import *
 
-# make this a csv file
 # a list of dictionaries of locations
 LOCATIONS_DICT = [
     {"name": "cell",
-        "desc": "You are in the prison cell assigned to you. It contains a sink, a toilet, your bed, a desk, and a chair. Your cell door is open and it leads to the dormitory.",
-        "dests": ["dorm"],
+        "desc": "You are in the prison cell assigned to you.\nIt contains a sink, a toilet, your bed, a desk, and a chair.\nYour cell door is open to the east, and it leads to the dormitory.",
+        "dests": ["dormitory"],
         "inspectables": {"sink": "The sink is made of stainless steel and has a leaky faucet.",
                          "bed": "Under the thin mattress, you find a crudely made steel crowbar. It is wide and thin, seemingly left behind by whoever previously lived in your cell.",
                          "desk": "It is a simple wooden table bolted to the walls.",
@@ -18,52 +16,55 @@ LOCATIONS_DICT = [
                          "toilet": "The toilet is a standard porcelain toilet, its surface showing signs of heavy use and occasional cleaning."},
         "items": []  # adds crowbar when bed is inspected
      },
-    {"name": "dorm",
-        "desc": "You are in the dormitory, a large room with many doors leading to the rooms of other prisoners. The door to your cell is to the west and the main hallway is to the east.",
+    {"name": "dormitory",
+        "desc": "You are in the dormitory.\nIt is a large room with many doors leading to the rooms of other prisoners.\nThe door to your cell is to the west and the main hallway is to the east.",
         "dests": ["cell", "hallway"],
         "inspectables": {"door": "You try the door to another inmate's cell, but it is locked."},
         "items": []
      },
     {
         "name": "hallway",
-        "desc": "You are in the dimly lit hallway leading to different communal areas of the prison. You can see the cafeteria to the north and the workshop to the south. The dormitory is to the west.",
-        "dests": ["dorm", "cafeteria", "workshop"],
+        "desc": "You are in the hallway.\nIt is a dimly lit hallway leading to different communal areas of the prison.\nYou can see the cafeteria to the north and the workshop to the south. The dormitory is to the west.",
+        "dests": ["dormitory", "cafeteria", "workshop"],
         "inspectables": {},
         "items": []
     },
     {
         "name": "cafeteria",
-        "desc": "You find yourself in the cafeteria. It is filled with people lining up to get their daily serving of food. You are served some unappetising bread, meat, and soup. To the east is a door leading to the courtyard, and the hallway is to the south. Directly to the north is the kitchen.",
-        "dests": ["hallway", "kitchen", "yard"],
-        "inspectables": {"bread": "A stale piece of bread.",
-                         "soup": "Watery, tasteless soup.",
-                         "meat": "A slimy piece of unidentifiable meat.",
+        "desc": "You are in the cafeteria.\nIt is filled with people lining up to get their daily serving of food. You are served some unappetising bread, meat, and soup.\nTo the east is a door leading to the courtyard, and the hallway is to the south. Directly to the north is the kitchen.",
+        "dests": ["hallway", "kitchen", "courtyard"],
+        "inspectables": {"bread": "The bread is stale and hard. However, it isn't hard enough to injure anyone.",
+                         "soup": "The soup is watery and tasteless.",
+                         "meat": "You pick up the slimy piece of unidentifiable meat, and put it back down.",
                          "door": "You see nothing special about the door.",
                          "food": "You are served some unappetising bread, meat, and soup."},
         "items": ["bread", "meat"]
     },
     {
-        "name": "yard",
-        "desc": "You are in the courtyard, an enclosed outdoor area surrounded by a barbed wire fence where you can get your daily exercise. There are a group of inmates gathered around, gossiping. There is a passage leading to the cafeteria to the west.",
+        "name": "courtyard",
+        "desc": "You are in the courtyard.\nIt is an enclosed outdoor area surrounded by a fence, where you get your daily exercise. There are a group of inmates gathered around, gossiping. There is a security guard watching sharply over the prisoners.\nThere is a passage leading to the cafeteria to the west.",
         "dests": ["cafeteria"],
-        "inspectables": {"fence": "You notice a small hole under the fence, but it is a little bit too small for your body to fit through. There is a security guard watching over the prisoners."},
+        "inspectables": {"fence": "The barbed wire fence is tall and stretches around the whole yard. You notice a small hole under the fence, but it is a little bit too small for your body to fit through.",
+                         "guard": "The guard is watching over the area."},
         "items": []
     },
     {
         "name": "kitchen",
-        "desc": "The kitchen is supervised by guards while inmates are working frantically, rushing to cook meals out for the others. There are rows of kitchen counters, along with multiple stoves and ovens. To the south, the cafeteria is directly connected.",
+        "desc": "You are in the kitchen.\nThe kitchen is supervised by guards while inmates are working frantically, rushing to cook meals out for the others. There is a loose spoon on the kitchen counter. \nThere is a door to the south that leads directly to the cafeteria. ",
         "dests": ["cafeteria"],
-        "inspectables": {"counter": "On the counter, there is an empty chopping board and a vegetable knife.",
-                         "stove": "Your average cooking stovetop.",
+        "inspectables": {"counter": "There is a loose spoon on the kitchen counter.",
+                         "stove": "There is nothing special about the stoves.",
                          "oven": "The ovens are filled with trays of food."},
-        "items": ["knife", "chopping board"]
-    },  # EDIT the items and inspect
+        "items": ["spoon"]
+    },
     {
         "name": "workshop",
-        "desc": "A noisy room full of labour. You can hear machinery sounds in the background as inmates work on projects under the supervision of guards. The hallway is to the north.",
+        "desc": "You are in the workshop.\nYou can hear machines running as inmates work on projects under the supervision of guards. Amongst the mess on the ground, you can spot a worn out piece of paper and a few nails.\nThe door to the hallway is to the north.",
         "dests": ["hallway"],
-        "inspectables": {"machine": "Out of all the old, creaky machines, you notice welding machines, sewing machines, drills, and saws."},
-        "items": ["drill", "saw"]
+        "inspectables": {"machine": "Out of all the old, creaky machines, you notice welding machines, sewing machines, drills, and saws.",
+                         "paper": 'The old piece of paper seems to be a list of the respective prison guards\' weaknesses, compiled by a previous inmate. Many of the words are faded and worn out, but the one line that you manage to read says:\n"The guard in the courtyard is easily distracted."',
+                         "nail": "The small metal nails are scattered over the floor."},
+        "items": ["nail", "paper", "wire"]
     }
 ]
 
@@ -80,18 +81,26 @@ class Location:
 
     def __str__(self):
         """Returns a string containing the information for each location."""
-        return f"You are in the {str(self.name)}. \n{str(self.desc)}"
+        if self.name == "courtyard" and player.bread_thrown:
+            self.desc = "You are in the courtyard.\nIt is an enclosed outdoor area surrounded by a fence, where you get your daily exercise. The security guard is distracted by a fight among a group of inmates. The path to freedom seems imminent.\nThere is a passage leading to the cafeteria to the west."
+            self.inspectables["guard"] = "The security guard is distracted by a fight among a group of inmates."
+
+        if self.name == "workshop" and "paper" in player.inv:
+            self.desc = "You are in the workshop.\nYou can hear machines running as inmates work on projects under the supervision of guards. Amongst the mess on the ground, you can spot a few nails.\nThe door to the hallway is to the north."
+
+        return f"{str(self.desc)}"
     # \nYou can go to {', '.join(str(dest) for dest in self.dests)}.
 
     def inspect(self, input_item):
         """Prints out more information about an item in the location."""
 
-        # if they inspect bed in the cell for the first time,
         if self.name == "cell" and input_item == "bed":
+            # if they inspect bed in the cell for the first time, then add crowbar to available items
             if "bed" not in player.inspected_items:
                 self.items.append("crowbar")
 
-            if "crowbar" in player.inv:
+            # if they have taken the crowbar,
+            elif "crowbar" not in self.items:
                 return "There is nothing else of interest about the bed."
 
         if input_item in self.inspectables:
@@ -152,6 +161,14 @@ class Player:
             return "You already have this item!"
 
         if input_item in self.current_loc.items:
+
+            if self.current_loc.name == "workshop" and input_item == "paper":
+                # if they take the paper from the workshop,
+                # then the paper is removed form the location and they can't inspect it
+                del self.current_loc.inspectables["paper"]
+            # changes the description of the location
+                self.current_loc.desc = "You are in the workshop.\nYou can hear machines running as inmates work on projects under the supervision of guards. Amongst the mess on the ground, you can spot a few nails.\nThe door to the hallway is to the north."
+
             self.inv.append(input_item)
             self.current_loc.items.remove(input_item)
             return f"You pick up the {input_item} and put it in your pocket."
@@ -163,27 +180,29 @@ class Player:
         """Conditions for every item that can be used."""
         # don't need to check if item is in inventory because it will only show on gui if it is in inventory
 
-        # if they are in the yard and have already inspected the fence,
-        if self.current_loc.name == "yard" and "fence" in player.inspected_items:
+        if input_item == "paper":
+            return 'The worn out piece of paper reads:\n"The guard in the courtyard is easily distracted."'
 
-            # they can throw the bread
-            if input_item == "bread":
-                self.bread_thrown = True
-                self.inv.remove(input_item)  # removes item from inventory
-                return "You throw the piece of bread at the gathering of people in the corner of the yard, causing a commotion amongst them. This attracts the guards, who go over to check out the fight. "
+        # if they are in the yard and throw the bread, they distract the guard
+        if self.current_loc.name == "courtyard" and input_item == "bread":
 
-            if input_item == "crowbar":
-                # if they use the crowbar after distracting the guard with bread, they win
-                if self.bread_thrown == True:
-                    self.win = True
-                    return
+            self.bread_thrown = True
+            self.inv.remove(input_item)  # removes bread from inventory
+            return "You throw the piece of bread at the gathering of people in the corner of the yard, causing a commotion amongst them. This attracts the guards, who go over to check out the fight. "
 
-                else:
-                    # if they use the crowbar without distracting the guard, they lose
-                    self.win = False
-                    return
+        # if they have seen the hole in the fence, they can use crowbar
+        if "fence" in player.inspected_items and input_item == "crowbar":
+            # if they use the crowbar after distracting the guard with bread, they win
+            if self.bread_thrown == True:
+                self.win = True
+                return
 
-        return "You don't know how to use that item."
+            else:
+                # if they use the crowbar without distracting the guard, they lose
+                self.win = False
+                return
+
+        return "You don't know how to use that item here."
 
 
 player = Player([])
@@ -196,7 +215,7 @@ root = tk.Tk()
 # changes title of the window
 root.title('⛓️👮 Prison Escape! 👮⛓️')
 
-img = PhotoImage(file='siren.png')
+img = tk.PhotoImage(file='siren.png')
 root.iconphoto(True, img)
 
 # changes size of the window
@@ -216,28 +235,26 @@ def main():
 
     # create text widget and specify size
     # min height is 1px so the textbox will fill remaining space in grid
-    main_text = Text(main_text_frame, fg="blue", height=1,
-                     padx=10, pady=5, wrap="word")
+    main_text = tk.Text(main_text_frame, height=1,
+                        padx=10, pady=5, wrap="word", font=("Calibri", 12))
 
     # create frame around move buttons
     move_frame = tk.Frame(root, bg="light grey", padx=10, pady=10)
     move_frame.grid(row=1, column=0, sticky="nsew", rowspan=2)
 
     # create a vertical scrollbar for the text box next to it
-    text_scrollbar = Scrollbar(
+    text_scrollbar = tk.Scrollbar(
         main_text_frame, orient="vertical", command=main_text.yview)
 
     # sticks the scrollbar to north and south of its grid
-    text_scrollbar.pack(side=RIGHT, fill='y')
+    text_scrollbar.pack(side="right", fill='y')
 
     # place at row0, sticky="nsew" makes it fill the whole grid
-    main_text.pack(expand=True, fill=BOTH, side=LEFT)
+    main_text.pack(expand=True, fill="both", side="left")
     # insert text that i want to display
     main_text.insert('1.0', player.current_loc)
     # user can't edit the text
     main_text['state'] = 'disabled'
-
-    # FIX the wording of the text
 
     # configure the text widget to use the scrollbar
     main_text.config(yscrollcommand=text_scrollbar.set)
@@ -248,7 +265,7 @@ def main():
 
     def inspect_action():
         """Updates the main text box when the player inspects something."""
-        inspect_input = inspect_entry.get().lower()
+        inspect_input = inspect_entry.get().lower().strip()
 
         if inspect_input:
             update_text(player.current_loc.inspect(inspect_input))
@@ -258,17 +275,17 @@ def main():
         inspect_entry.delete(0, 'end')
 
     # entry is a one line text input widget
-    inspect_entry = Entry(entry_frame, highlightbackground="black",
-                          highlightthickness=1)
+    inspect_entry = tk.Entry(entry_frame, highlightbackground="black",
+                             highlightthickness=1, font=("Calibri", 12))
     inspect_entry.grid(row=0, column=0, sticky="ew", padx=5)
 
-    inspect_btn = Button(entry_frame, text="Inspect!",
-                         width=10, command=inspect_action)
+    inspect_btn = tk.Button(entry_frame, text="Inspect!", font=("Calibri", 12),
+                            width=10, command=inspect_action)
     inspect_btn.grid(row=0, column=1, pady=1, padx=(0, 5))
 
     def take_action():
         """Updates the main text box and inventory when the player takes something."""
-        take_input = take_entry.get().lower()
+        take_input = take_entry.get().lower().strip()
 
         if take_input:
             result = player.take(take_input)
@@ -280,14 +297,15 @@ def main():
         take_entry.delete(0, 'end')
 
     # take_frame = tk.Frame(entry_frame)
-    # take_frame.pack(fill=BOTH, padx=5)
+    # take_frame.pack(fill="both", padx=5)
 
-    take_entry = Entry(entry_frame, highlightbackground="black",
-                       highlightthickness=1)
-    # take_entry.pack(side="left", fill=X, expand=True)
+    take_entry = tk.Entry(entry_frame, highlightbackground="black",
+                          highlightthickness=1, font=("Calibri", 12))
+    # take_entry.pack(side=""left"", fill=X, expand=True)
     take_entry.grid(row=1, column=0, sticky="ew", padx=5)
 
-    take_btn = Button(entry_frame, text="Take!", width=10, command=take_action)
+    take_btn = tk.Button(entry_frame, text="Take!", width=10,
+                         font=("Calibri", 12), command=take_action)
     # take_btn.pack(side="right", padx=(5, 0))
     take_btn.grid(row=1, column=1, pady=1, padx=(0, 5))
 
@@ -295,14 +313,20 @@ def main():
 
     inv_frame = tk.Frame(root)
     inv_frame.grid(row=2, column=1, sticky="nswe")
-    inv_frame.grid_propagate(False)
 
-    inv_heading_label = Label(
-        inv_frame, text="Click to Use an Item in Your Inventory:")
-    inv_heading_label.grid(row=0, sticky="nwe")
-# FIX HELP idk why the label is to the left
+    inv_heading_label = tk.Label(
+        inv_frame, text="Click to Use an Item in Your Inventory:", font=("Calibri", 12))
+    inv_heading_label.grid(row=0, column=0, sticky="nwes")
+
     inv_items_frame = tk.Frame(inv_frame)
-    inv_items_frame.grid(row=1)
+    inv_items_frame.grid(row=1, column=0)
+
+    inv_empty_text = tk.Label(
+        inv_items_frame, text="Your Inventory is Empty.", font=("Calibri", 12))
+    inv_empty_text.grid(row=0, column=0, sticky="nwes")
+
+    inv_frame.grid_columnconfigure(0, weight=1)
+    inv_frame.grid_propagate(False)
 
     def use_action(item):
         """Updates main text and inventory when the player uses an item."""
@@ -329,12 +353,17 @@ def main():
         # for item in player.inv:
         #     item_button = Button(inv_items_frame, text=item.title(),
         #                          command=lambda item=item: use_action(item))
-        #     item_button.pack(side=LEFT)
+        #     item_button.pack(side="left")
+
+        if not player.inv:  # if player inventory is empty, i.e after using all items, print that
+            inv_empty_text = tk.Label(
+                inv_items_frame, text="Your Inventory is Empty.", font=("Calibri", 12))
+            inv_empty_text.grid(row=0, column=0, sticky="nwes")
 
         for i, item in enumerate(player.inv):
-            item_button = Button(inv_items_frame, text=item.title(),
-                                 command=lambda item=item: use_action(item))
-            item_button.grid(row=0, column=i, sticky="ns", padx=5)
+            item_button = tk.Button(inv_items_frame, text=item.title(), font=("Calibri", 12),
+                                    command=lambda item=item: use_action(item))
+            item_button.grid(row=0, column=i, sticky="ns", padx=5, pady=10)
 
     def clear_move_frame():
         """Clears the move button frame after a button is clicked."""
@@ -360,13 +389,13 @@ def main():
         """Creates main move button"""
         main_move_button = tk.Button(
             move_frame,
-            text='Move', width=20,
+            text='Move', width=20, font=("Calibri", 14),
             # command = creates new buttons for each direction
             command=lambda: [clear_move_frame(), create_move_buttons()]
         )
 
         # main_move_button.place(relx=.5, rely=.5, anchor="c") #centres the move button in its grid
-        main_move_button.pack(fill=BOTH, expand=True)
+        main_move_button.pack(fill="both", expand=True)
 
     def create_move_buttons():
         """"Makes separate buttons for each location. Runs after main move button is clicked."""
@@ -383,13 +412,13 @@ def main():
             rely_value = (i + 0.5) * rel_height
             sub_move_button = tk.Button(
                 move_frame,
-                text=f"Move to the {dest}",
+                text=f"Move to the {dest}", font=("Calibri", 12),
                 # dest=dest sets the variable before the loop repeats
                 command=lambda dest=dest: tkinter_update_move(dest)
             )
 
             sub_move_button.place(relx=0.5, rely=rely_value,
-                                  relwidth=1, relheight=rel_height, anchor=CENTER)
+                                  relwidth=1, relheight=rel_height, anchor="center")
 
     # creates main move button
     create_main_move_button()
@@ -412,12 +441,12 @@ def start_window():
         root, text="Welcome to Prison Escape!\n\n"
         "You have been unjustfully imprisoned at the local prison with a life sentence."
         "\nExplore the prison and use anything around you to find your way out!",
-        font=("Helvetica", 14), wraplength=500)
-    description_label.place(relx=0.5, rely=0.3, anchor=CENTER)
+        font=("Calibri", 14), wraplength=500)
+    description_label.place(relx=0.5, rely=0.3, anchor="center")
 
-    start_button = Button(root, text="PLAY NOW!", font=(
-        "Helvetica", 14), bg="#4CAF50", fg="white", padx=10, pady=5, activebackground="#45a049", activeforeground="white", command=main)
-    start_button.place(relx=0.5, rely=0.6, anchor=CENTER)
+    start_button = tk.Button(root, text="PLAY NOW!", font=(
+        "Calibri", 14), bg="#4CAF50", fg="white", padx=10, pady=5, activebackground="#45a049", activeforeground="white", command=main)
+    start_button.place(relx=0.5, rely=0.6, anchor="center")
 
 
 def win_window():
@@ -427,15 +456,15 @@ def win_window():
         widget.destroy()
 
     win_label = tk.Label(
-        root, text="Congratulations, You Win!", font=("Helvetica", 20), fg="green")
-    win_label.place(relx=0.5, rely=0.2, anchor=CENTER)
+        root, text="Congratulations, You Win!", font=("Calibri", 20), fg="green")
+    win_label.place(relx=0.5, rely=0.2, anchor="center")
 
     win_text = tk.Label(
         root, text="You seize this moment to dig under the fence with your crowbar, enlargening the hole. "
         "After a few tense moments, you succeed, and with a final effort, you squeeze through to the other side. "
         "As you emerge into the night, you take a deep breath of freedom, feeling the cool air on your face for the first time in years. "
-        "You are now a free person, ready to start a new chapter in your life. Well done, you win!", font=("Helvetica", 14), wraplength=400)
-    win_text.place(relx=0.5, rely=0.6, anchor=CENTER)
+        "You are now a free person, ready to start a new chapter in your life. Well done, you win!", font=("Calibri", 14), wraplength=400)
+    win_text.place(relx=0.5, rely=0.6, anchor="center")
 
 
 def lose_window():
@@ -445,15 +474,15 @@ def lose_window():
         widget.destroy()
 
     lose_label = tk.Label(
-        root, text="Game Over, You Lose!", font=("Helvetica", 20), fg="red")
-    lose_label.place(relx=0.5, rely=0.2, anchor=CENTER)
+        root, text="Game Over, You Lose!", font=("Calibri", 20), fg="red")
+    lose_label.place(relx=0.5, rely=0.2, anchor="center")
 
     lose_text = tk.Label(
-        root, text="You start to use your crowbar to dig at the hole under the fence. Unfortunately, the guard catches you trying to escape. He knocks you unconscious and drags you back to your cell. Better luck next time!", font=("Helvetica", 14), wraplength=400)
-    lose_text.place(relx=0.5, rely=0.6, anchor=CENTER)
+        root, text="You start to use your crowbar to dig at the hole under the fence. Unfortunately, the guard catches you trying to escape. He knocks you unconscious and drags you back to your cell. Better luck next time!", font=("Calibri", 14), wraplength=400)
+    lose_text.place(relx=0.5, rely=0.6, anchor="center")
 
     # start_button = Button(root, text="Start the game!", command=game)
-    # start_button.pack(anchor=CENTER, expand=True)
+    # start_button.pack(anchor="center", expand=True)
 
 
 start_window()
