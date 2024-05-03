@@ -70,7 +70,8 @@ LOCATIONS_DICT = [
 
 
 class Location:
-    """A class for locations. Stores location name, description, destinations, items."""
+    """A class for each location. 
+    Stores location name, description, destinations, inspsectable items, items to take."""
 
     def __init__(self, name, desc, dests, inspectables, items):
         self.name = name
@@ -81,30 +82,31 @@ class Location:
 
     def __str__(self):
         """Returns a string containing the information for each location."""
+        # If the bread is thrown in the courtyard, it causes a distraction.
         if self.name == "courtyard" and player.bread_thrown:
             self.desc = "You are in the courtyard.\nIt is an enclosed outdoor area surrounded by a fence, where you get your daily exercise. The security guard is distracted by a fight among a group of inmates. The path to freedom seems imminent.\nThere is a passage leading to the cafeteria to the west."
             self.inspectables["guard"] = "The security guard is distracted by a fight among a group of inmates."
 
+        # Changes the desc of the workshop after they pick up the paper.
         if self.name == "workshop" and "paper" in player.inv:
             self.desc = "You are in the workshop.\nYou can hear machines running as inmates work on projects under the supervision of guards. Amongst the mess on the ground, you can spot a few nails.\nThe door to the hallway is to the north."
 
         return f"{str(self.desc)}"
-    # \nYou can go to {', '.join(str(dest) for dest in self.dests)}.
 
     def inspect(self, input_item):
         """Prints out more information about an item in the location."""
 
+        # If they inspect bed in the cell for the first time, then add crowbar to available items.
         if self.name == "cell" and input_item == "bed":
-            # if they inspect bed in the cell for the first time, then add crowbar to available items
             if "bed" not in player.inspected_items:
                 self.items.append("crowbar")
 
-            # if they have taken the crowbar,
+            # If they have already taken the crowbar, there is nothing else under the bed.
             elif "crowbar" not in self.items:
                 return "There is nothing else of interest about the bed."
 
         if input_item in self.inspectables:
-            # adds input_item to the inspected set
+            # Adds input_item to the inspected set.
             player.inspected_items.add(input_item)
             return self.inspectables[input_item]
 
@@ -112,8 +114,8 @@ class Location:
             return "You can't inspect any such thing."
 
 
+# Splits key value pairs from LOCATIONS_DICT to create location objects stored in the list locations
 locations = [Location(**location) for location in LOCATIONS_DICT]
-# splits key value pairs from LOCATIONS_DICT to create location objects stored in the list locations
 
 
 def get_loc(input_loc):
@@ -121,11 +123,10 @@ def get_loc(input_loc):
     for location in locations:
         if location.name == input_loc:
             return location
-    # else
+
     return None
 
 
-# player's starting location
 START_LOC = get_loc("cell")
 
 
@@ -133,24 +134,23 @@ class Player:
     """Class for the player. Stores the player's current location and inventory."""
 
     def __init__(self, inv, current_loc=START_LOC, inspected_items=set(), win=None):
-        # current_loc will be the starting location if not otherwise defined
-        # stores inspected items in a set -> items cannot be repeated
-        # win variable will change to True or False if they win or lose
+        # Current_loc will be the starting location if not otherwise defined
+        # Stores inspected items in a set -> items cannot be repeated
+        # Win variable will change to True or False if they win or lose
         self.inv = inv
         self.current_loc = current_loc
         self.inspected_items = inspected_items
         self.win = win
-        self.bread_thrown = False
+        self.bread_thrown = False  # Is the guard distracted?
 
     def move(self, input_dest):
         """Changes the player's current_loc to the new location that they input."""
-
-        # if the destination that the player inputs is valid,
+        # If the destination that the player inputs is valid,
         if input_dest in self.current_loc.dests:
-            # get new location object using get_loc
+            # Get new location object using get_loc
             new_loc = get_loc(input_dest)
             self.current_loc = new_loc
-            return self.current_loc  # return description of location
+            return self.current_loc  # Return description of location
 
         else:
             return "That is not a valid move."
@@ -160,15 +160,16 @@ class Player:
         if input_item in self.inv:
             return "You already have this item!"
 
+        # If the item is available to be taken
         if input_item in self.current_loc.items:
-
+            # If they take the paper from the workshop,
             if self.current_loc.name == "workshop" and input_item == "paper":
-                # if they take the paper from the workshop,
-                # then the paper is removed form the location and they can't inspect it
+                # Then the paper is removed form the location and they can't inspect it
                 del self.current_loc.inspectables["paper"]
-            # changes the description of the location
+                # Changes the description of the workship
                 self.current_loc.desc = "You are in the workshop.\nYou can hear machines running as inmates work on projects under the supervision of guards. Amongst the mess on the ground, you can spot a few nails.\nThe door to the hallway is to the north."
 
+            # Adds item to inventory and removes from available items
             self.inv.append(input_item)
             self.current_loc.items.remove(input_item)
             return f"You pick up the {input_item} and put it in your pocket."
@@ -178,314 +179,311 @@ class Player:
 
     def use(self, input_item):
         """Conditions for every item that can be used."""
-        # don't need to check if item is in inventory because it will only show on gui if it is in inventory
+        # Don't need to check if item is in inventory because it will only show on GUI if it is in inventory
 
         if input_item == "paper":
             return 'The worn out piece of paper reads:\n"The guard in the courtyard is easily distracted."'
 
-        # if they are in the yard and throw the bread, they distract the guard
+        # If they are in the yard and throw the bread, they distract the guard
         if self.current_loc.name == "courtyard" and input_item == "bread":
 
-            self.bread_thrown = True
-            self.inv.remove(input_item)  # removes bread from inventory
+            self.bread_thrown = True  # Guard == distracted
+            self.inv.remove(input_item)  # Removes bread from inventory
             return "You throw the piece of bread at the gathering of people in the corner of the yard, causing a commotion amongst them. This attracts the guards, who go over to check out the fight. "
 
-        # if they have seen the hole in the fence, they can use crowbar
+        # If they have seen the hole in the fence, they can use the crowbar
         if "fence" in player.inspected_items and input_item == "crowbar":
-            # if they use the crowbar after distracting the guard with bread, they win
+            # If they use the crowbar after distracting the guard, they win.
             if self.bread_thrown == True:
                 self.win = True
                 return
 
             else:
-                # if they use the crowbar without distracting the guard, they lose
+                # If they use the crowbar without distracting the guard, they lose.
                 self.win = False
                 return
 
         return "You don't know how to use that item here."
 
 
-player = Player([])
+class App:
+    """A class for the main Tkinter app."""
 
-# ------------Tkinter stuff---------------------
+    def __init__(self):
+        """Initialises the Tkinter window"""
+        self.root = tk.Tk()
+        self.root.title('⛓️👮 Prison Escape! 👮⛓️')
+        self.img = tk.PhotoImage(file='siren.png')
+        self.root.iconphoto(True, self.img)  # Custom icon
 
-# create tkinter window
-root = tk.Tk()
+        self.root.geometry('600x400')
+        self.root.minsize(500, 400)
+        self.root.resizable(True, True)
 
-# changes title of the window
-root.title('⛓️👮 Prison Escape! 👮⛓️')
+        self.start_window()
 
-img = tk.PhotoImage(file='siren.png')
-root.iconphoto(True, img)
+    def game(self):
+        """Runs the main game."""
+        # Clears the window
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-# changes size of the window
-root.geometry('600x400')
-root.minsize(500, 400)
-root.resizable(True, True)
+        def use_action(item):
+            """Updates main text and inventory when the player uses an item."""
 
+            result = player.use(item)
 
-def main():
-    """Runs the game."""
+            if player.win == True:
+                # If they win show win screen
+                self.win_window()
+                return
 
-    for widget in root.winfo_children():
-        widget.destroy()
+            if player.win == False:
+                # If they lose show lose screen
+                self.lose_window()
+                return
 
-    main_text_frame = tk.Frame(root)
-    main_text_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
-
-    # create text widget and specify size
-    # min height is 1px so the textbox will fill remaining space in grid
-    main_text = tk.Text(main_text_frame, height=1,
-                        padx=10, pady=5, wrap="word", font=("Calibri", 12))
-
-    # create frame around move buttons
-    move_frame = tk.Frame(root, bg="light grey", padx=10, pady=10)
-    move_frame.grid(row=1, column=0, sticky="nsew", rowspan=2)
-
-    # create a vertical scrollbar for the text box next to it
-    text_scrollbar = tk.Scrollbar(
-        main_text_frame, orient="vertical", command=main_text.yview)
-
-    # sticks the scrollbar to north and south of its grid
-    text_scrollbar.pack(side="right", fill='y')
-
-    # place at row0, sticky="nsew" makes it fill the whole grid
-    main_text.pack(expand=True, fill="both", side="left")
-    # insert text that i want to display
-    main_text.insert('1.0', player.current_loc)
-    # user can't edit the text
-    main_text['state'] = 'disabled'
-
-    # configure the text widget to use the scrollbar
-    main_text.config(yscrollcommand=text_scrollbar.set)
-
-    # create frame around entry input boxes
-    entry_frame = tk.Frame(root)
-    entry_frame.grid(row=1, column=1, pady=5, sticky="nswe")
-
-    def inspect_action():
-        """Updates the main text box when the player inspects something."""
-        inspect_input = inspect_entry.get().lower().strip()
-
-        if inspect_input:
-            update_text(player.current_loc.inspect(inspect_input))
-        else:
-            update_text("Please enter an item to inspect.")
-
-        inspect_entry.delete(0, 'end')
-
-    # entry is a one line text input widget
-    inspect_entry = tk.Entry(entry_frame, highlightbackground="black",
-                             highlightthickness=1, font=("Calibri", 12))
-    inspect_entry.grid(row=0, column=0, sticky="ew", padx=5)
-
-    inspect_btn = tk.Button(entry_frame, text="Inspect!", font=("Calibri", 12),
-                            width=10, command=inspect_action)
-    inspect_btn.grid(row=0, column=1, pady=1, padx=(0, 5))
-
-    def take_action():
-        """Updates the main text box and inventory when the player takes something."""
-        take_input = take_entry.get().lower().strip()
-
-        if take_input:
-            result = player.take(take_input)
             update_text(result)
             update_inv_display()
-        else:
-            update_text("Please enter an item to take.")
 
-        take_entry.delete(0, 'end')
+        def inspect_action():
+            """Updates the main text box when the player inspects something."""
+            inspect_input = inspect_entry.get().lower().strip()
 
-    # take_frame = tk.Frame(entry_frame)
-    # take_frame.pack(fill="both", padx=5)
+            if inspect_input:
+                update_text(player.current_loc.inspect(inspect_input))
+            else:
+                update_text("Please enter an item to inspect.")
 
-    take_entry = tk.Entry(entry_frame, highlightbackground="black",
-                          highlightthickness=1, font=("Calibri", 12))
-    # take_entry.pack(side=""left"", fill=X, expand=True)
-    take_entry.grid(row=1, column=0, sticky="ew", padx=5)
+            inspect_entry.delete(0, 'end')
 
-    take_btn = tk.Button(entry_frame, text="Take!", width=10,
-                         font=("Calibri", 12), command=take_action)
-    # take_btn.pack(side="right", padx=(5, 0))
-    take_btn.grid(row=1, column=1, pady=1, padx=(0, 5))
+        def take_action():
+            """Updates the main text box and inventory when the player takes something."""
+            take_input = take_entry.get().lower().strip()
 
-    entry_frame.grid_columnconfigure(0, weight=1)
+            if take_input:
+                result = player.take(take_input)
+                update_text(result)
+                update_inv_display()
+            else:
+                update_text("Please enter an item to take.")
 
-    inv_frame = tk.Frame(root)
-    inv_frame.grid(row=2, column=1, sticky="nswe")
+            take_entry.delete(0, 'end')
 
-    inv_heading_label = tk.Label(
-        inv_frame, text="Click to Use an Item in Your Inventory:", font=("Calibri", 12))
-    inv_heading_label.grid(row=0, column=0, sticky="nwes")
+        def update_inv_display():
+            """Updates inventory display when an item is used or taken."""
 
-    inv_items_frame = tk.Frame(inv_frame)
-    inv_items_frame.grid(row=1, column=0)
+            for widget in inv_items_frame.winfo_children():
+                widget.destroy()
 
-    inv_empty_text = tk.Label(
-        inv_items_frame, text="Your Inventory is Empty.", font=("Calibri", 12))
-    inv_empty_text.grid(row=0, column=0, sticky="nwes")
+            # for item in player.inv:
+            #     item_button = Button(inv_items_frame, text=item.title(),
+            #                          command=lambda item=item: use_action(item))
+            #     item_button.pack(side="left")
 
-    inv_frame.grid_columnconfigure(0, weight=1)
-    inv_frame.grid_propagate(False)
+            if not player.inv:  # If player inventory is empty
+                inv_empty_text = tk.Label(
+                    inv_items_frame, text="Your Inventory is Empty.", font=("Calibri", 12))
+                inv_empty_text.grid(row=0, column=0, sticky="nwes")
 
-    def use_action(item):
-        """Updates main text and inventory when the player uses an item."""
+            for i, item in enumerate(player.inv):
+                # For each iteration of the inventory items,
+                # put the inventory buttons in the next column
+                item_button = tk.Button(inv_items_frame, text=item.title(), font=("Calibri", 12),
+                                        command=lambda item=item: use_action(item))
+                item_button.grid(row=0, column=i, sticky="ns", padx=5, pady=10)
 
-        result = player.use(item)
+        def clear_move_frame():
+            """Clears the move button frame after a button is clicked."""
+            for widget in move_frame.winfo_children():
+                # .winfo_children gets each children widget of the frame
+                widget.destroy()
 
-        if player.win == True:
-            win_window()
-            return
+        def update_text(new_string):
+            """Adds new text to the main text box."""
+            main_text.config(state='normal')  # Enables the text widget
+            # Inserts new text at end of old text with 2 new lines
+            main_text.insert('end', '\n\n' + str(new_string))
+            main_text.see('end')  # Scrolls to end of text box
+            main_text.config(state='disabled')  # Re-disables the text widget
 
-        if player.win == False:
-            lose_window()
-            return
+        def tkinter_update_move(dest):
+            """Moves player when button is clicked, adds new text, and replaces buttons."""
+            player.move(dest)
+            update_text(player.current_loc)
+            clear_move_frame()
+            create_main_move_button()
 
-        update_text(result)
-        update_inv_display()
-
-    def update_inv_display():
-        """Updates inventory display when an item is used or taken."""
-
-        for widget in inv_items_frame.winfo_children():
-            widget.destroy()
-
-        # for item in player.inv:
-        #     item_button = Button(inv_items_frame, text=item.title(),
-        #                          command=lambda item=item: use_action(item))
-        #     item_button.pack(side="left")
-
-        if not player.inv:  # if player inventory is empty, i.e after using all items, print that
-            inv_empty_text = tk.Label(
-                inv_items_frame, text="Your Inventory is Empty.", font=("Calibri", 12))
-            inv_empty_text.grid(row=0, column=0, sticky="nwes")
-
-        for i, item in enumerate(player.inv):
-            item_button = tk.Button(inv_items_frame, text=item.title(), font=("Calibri", 12),
-                                    command=lambda item=item: use_action(item))
-            item_button.grid(row=0, column=i, sticky="ns", padx=5, pady=10)
-
-    def clear_move_frame():
-        """Clears the move button frame after a button is clicked."""
-        for widget in move_frame.winfo_children():  # .winfo_children gets each children widget of the frame
-            widget.destroy()
-
-    def update_text(new_string):
-        """Adds new text to the main text box."""
-        main_text.config(state='normal')  # enables the text widget
-        # inserts new text at end of old text with 2 new lines
-        main_text.insert('end', '\n\n' + str(new_string))
-        main_text.see('end')  # scrolls to end of text box
-        main_text.config(state='disabled')  # re-disables the text widget
-
-    def tkinter_update_move(dest):
-        """Moves player when button is clicked, adds new text, and replaces buttons."""
-        player.move(dest)
-        update_text(player.current_loc)
-        clear_move_frame()
-        create_main_move_button()
-
-    def create_main_move_button():
-        """Creates main move button"""
-        main_move_button = tk.Button(
-            move_frame,
-            text='Move', width=20, font=("Calibri", 14),
-            # command = creates new buttons for each direction
-            command=lambda: [clear_move_frame(), create_move_buttons()]
-        )
-
-        # main_move_button.place(relx=.5, rely=.5, anchor="c") #centres the move button in its grid
-        main_move_button.pack(fill="both", expand=True)
-
-    def create_move_buttons():
-        """"Makes separate buttons for each location. Runs after main move button is clicked."""
-
-        # makes buttons evenly sized in the frame
-        rel_height = 1 / len(player.current_loc.dests)
-
-        # for each destination,
-        # enumerate returns (button number, destination)
-        for i, dest in enumerate(player.current_loc.dests):
-            # offset value for each button so they can stack on top of each other
-            # for example, if there are 2 buttons, the first will be offset by 0.25,
-            # and the second will be by 0.75, which positions them both with equal spacing
-            rely_value = (i + 0.5) * rel_height
-            sub_move_button = tk.Button(
+        def create_main_move_button():
+            """Creates main move button"""
+            main_move_button = tk.Button(
                 move_frame,
-                text=f"Move to the {dest}", font=("Calibri", 12),
-                # dest=dest sets the variable before the loop repeats
-                command=lambda dest=dest: tkinter_update_move(dest)
+                text='Move', width=20, font=("Calibri", 14),
+                # command = creates new buttons for each direction
+                command=lambda: [clear_move_frame(), create_move_buttons()]
             )
 
-            sub_move_button.place(relx=0.5, rely=rely_value,
-                                  relwidth=1, relheight=rel_height, anchor="center")
+            # main_move_button.place(relx=.5, rely=.5, anchor="c")
+            main_move_button.pack(fill="both", expand=True)
 
-    # creates main move button
-    create_main_move_button()
+        def create_move_buttons():
+            """"Makes separate buttons for each location. Runs after main move button is clicked."""
 
-    # -----------------ratios/weights of grid---------
-    # keeps text row and buttons row the same ratio when resizing window
-    root.grid_rowconfigure(0, weight=1)
-    root.grid_rowconfigure(2, weight=1)
+            # Makes buttons evenly sized in the frame
+            rel_height = 1 / len(player.current_loc.dests)
 
-    # gives the text column (column0) priority over the scrollbar column
-    root.grid_columnconfigure(0, weight=1)
-    root.grid_columnconfigure(1, weight=1)
-    # -----------------------------------------------------------------
+            # For each destination,
+            # enumerate returns (button number, destination)
+            for i, dest in enumerate(player.current_loc.dests):
+                # Offset value for each button so they can stack on top of each other
+                # For example, if there are 2 buttons, the first will be offset by 0.25,
+                # and the second will be by 0.75, which positions them both with equal spacing
+                rely_value = (i + 0.5) * rel_height
+                sub_move_button = tk.Button(
+                    move_frame,
+                    text=f"Move to the {dest}", font=("Calibri", 12),
+                    # dest=dest sets the variable before the loop repeats
+                    command=lambda dest=dest: tkinter_update_move(dest)
+                )
+
+                sub_move_button.place(relx=0.5, rely=rely_value,
+                                      relwidth=1, relheight=rel_height, anchor="center")
+
+        # Creates main move button
+        create_main_move_button()
+
+        # Frame for the text and scrollbar
+        main_text_frame = tk.Frame(self.root)
+        main_text_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
+
+        # Create text widget
+        # Min height is 1px so the text widget will fill remaining space in grid
+        main_text = tk.Text(main_text_frame, height=1,
+                            padx=10, pady=5, wrap="word", font=("Calibri", 12))
+        main_text.pack(expand=True, fill="both", side="left")
+
+        # Create a vertical scrollbar for the text box next to it
+        text_scrollbar = tk.Scrollbar(
+            main_text_frame, orient="vertical", command=main_text.yview)
+        text_scrollbar.pack(side="right", fill='y')
+
+        # Insert starting text
+        main_text.insert('1.0', player.current_loc)
+        # Player can't edit the text
+        main_text['state'] = 'disabled'
+
+        # Configure the text widget to use the scrollbar
+        main_text.config(yscrollcommand=text_scrollbar.set)
+
+        # Frame containing all move buttons
+        move_frame = tk.Frame(self.root, bg="light grey", padx=10, pady=10)
+        move_frame.grid(row=1, column=0, sticky="nsew", rowspan=2)
+
+        # Create frame around entry input boxes and buttons
+        entry_frame = tk.Frame(self.root)
+        entry_frame.grid(row=1, column=1, pady=5, sticky="nswe")
+
+        inspect_entry = tk.Entry(entry_frame, highlightbackground="black",
+                                 highlightthickness=1, font=("Calibri", 12))
+        inspect_entry.grid(row=0, column=0, sticky="ew", padx=5)
+
+        inspect_btn = tk.Button(entry_frame, text="Inspect!", font=("Calibri", 12),
+                                width=10, command=inspect_action)
+        inspect_btn.grid(row=0, column=1, pady=1, padx=(0, 5))
+
+        # take_frame = tk.Frame(entry_frame)
+        # take_frame.pack(fill="both", padx=5)
+
+        take_entry = tk.Entry(entry_frame, highlightbackground="black",
+                              highlightthickness=1, font=("Calibri", 12))
+        # take_entry.pack(side=""left"", fill=X, expand=True)
+        take_entry.grid(row=1, column=0, sticky="ew", padx=5)
+
+        take_btn = tk.Button(entry_frame, text="Take!", width=10,
+                             font=("Calibri", 12), command=take_action)
+        # take_btn.pack(side="right", padx=(5, 0))
+        take_btn.grid(row=1, column=1, pady=1, padx=(0, 5))
+
+        entry_frame.grid_columnconfigure(0, weight=1)
+
+        inv_frame = tk.Frame(self.root)
+        inv_frame.grid(row=2, column=1, sticky="nswe")
+
+        inv_heading_label = tk.Label(
+            inv_frame, text="Click to Use an Item in Your Inventory:", font=("Calibri", 12))
+        inv_heading_label.grid(row=0, column=0, sticky="nwes")
+
+        inv_items_frame = tk.Frame(inv_frame)
+        inv_items_frame.grid(row=1, column=0)
+
+        inv_empty_text = tk.Label(
+            inv_items_frame, text="Your Inventory is Empty.", font=("Calibri", 12))
+        inv_empty_text.grid(row=0, column=0, sticky="nwes")
+
+        inv_frame.grid_columnconfigure(0, weight=1)
+        # The frame doesn't shrink to fit contents
+        inv_frame.grid_propagate(False)
+
+        # -----------------ratios/weights of grid---------
+        # Keeps text row and buttons row the same ratio when resizing window
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_rowconfigure(2, weight=1)
+
+        # Gives the text column (column0) priority over the scrollbar column
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
+        # -----------------------------------------------------------------
+
+    def start_window(self):
+        """The starting screen."""
+
+        description_label = tk.Label(
+            self.root, text="Welcome to Prison Escape!\n\n"
+            "You have been unjustfully imprisoned at the local prison with a life sentence."
+            "\nExplore the prison and use anything around you to find your way out!",
+            font=("Calibri", 14), wraplength=500)
+        description_label.place(relx=0.5, rely=0.3, anchor="center")
+
+        start_button = tk.Button(self.root, text="PLAY NOW!", font=(
+            "Calibri", 14), bg="#4CAF50", fg="white", padx=10, pady=5, activebackground="#45a049", activeforeground="white", command=self.game)
+        start_button.place(relx=0.5, rely=0.6, anchor="center")
+
+    def win_window(self):
+        """The win screen."""
+
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        win_label = tk.Label(
+            self.root, text="Congratulations, You Win!", font=("Calibri", 20), fg="green")
+        win_label.place(relx=0.5, rely=0.2, anchor="center")
+
+        win_text = tk.Label(
+            self.root, text="You seize this moment to dig under the fence with your crowbar, enlargening the hole. "
+            "After a few tense moments, you succeed, and with a final effort, you squeeze through to the other side. "
+            "As you emerge into the night, you take a deep breath of freedom, feeling the cool air on your face for the first time in years. "
+            "You are now a free person, ready to start a new chapter in your life. Well done, you win!", font=("Calibri", 14), wraplength=400)
+        win_text.place(relx=0.5, rely=0.6, anchor="center")
+
+    def lose_window(self):
+        """The lose screen"""
+
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        lose_label = tk.Label(
+            self.root, text="Game Over, You Lose!", font=("Calibri", 20), fg="red")
+        lose_label.place(relx=0.5, rely=0.2, anchor="center")
+
+        lose_text = tk.Label(
+            self.root, text="You start to use your crowbar to dig at the hole under the fence. Unfortunately, the guard catches you trying to escape. He knocks you unconscious and drags you back to your cell. Better luck next time!", font=("Calibri", 14), wraplength=400)
+        lose_text.place(relx=0.5, rely=0.6, anchor="center")
+
+        # start_button = Button(root, text="Start the game!", command=game)
+        # start_button.pack(anchor="center", expand=True)
 
 
-def start_window():
-    """The starting screen."""
-
-    description_label = tk.Label(
-        root, text="Welcome to Prison Escape!\n\n"
-        "You have been unjustfully imprisoned at the local prison with a life sentence."
-        "\nExplore the prison and use anything around you to find your way out!",
-        font=("Calibri", 14), wraplength=500)
-    description_label.place(relx=0.5, rely=0.3, anchor="center")
-
-    start_button = tk.Button(root, text="PLAY NOW!", font=(
-        "Calibri", 14), bg="#4CAF50", fg="white", padx=10, pady=5, activebackground="#45a049", activeforeground="white", command=main)
-    start_button.place(relx=0.5, rely=0.6, anchor="center")
-
-
-def win_window():
-    """The win screen."""
-
-    for widget in root.winfo_children():
-        widget.destroy()
-
-    win_label = tk.Label(
-        root, text="Congratulations, You Win!", font=("Calibri", 20), fg="green")
-    win_label.place(relx=0.5, rely=0.2, anchor="center")
-
-    win_text = tk.Label(
-        root, text="You seize this moment to dig under the fence with your crowbar, enlargening the hole. "
-        "After a few tense moments, you succeed, and with a final effort, you squeeze through to the other side. "
-        "As you emerge into the night, you take a deep breath of freedom, feeling the cool air on your face for the first time in years. "
-        "You are now a free person, ready to start a new chapter in your life. Well done, you win!", font=("Calibri", 14), wraplength=400)
-    win_text.place(relx=0.5, rely=0.6, anchor="center")
-
-
-def lose_window():
-    """The lose screen"""
-
-    for widget in root.winfo_children():
-        widget.destroy()
-
-    lose_label = tk.Label(
-        root, text="Game Over, You Lose!", font=("Calibri", 20), fg="red")
-    lose_label.place(relx=0.5, rely=0.2, anchor="center")
-
-    lose_text = tk.Label(
-        root, text="You start to use your crowbar to dig at the hole under the fence. Unfortunately, the guard catches you trying to escape. He knocks you unconscious and drags you back to your cell. Better luck next time!", font=("Calibri", 14), wraplength=400)
-    lose_text.place(relx=0.5, rely=0.6, anchor="center")
-
-    # start_button = Button(root, text="Start the game!", command=game)
-    # start_button.pack(anchor="center", expand=True)
-
-
-start_window()
-
-# keeps the tkinter window displaying
-root.mainloop()
+if __name__ == "__main__":
+    player = Player([])
+    app = App()
+    app.root.mainloop()
