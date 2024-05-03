@@ -222,15 +222,19 @@ class App:
 
         self.start_window()
 
+    def clear_frame(self, frame):
+        """Clears the move button frame after a button is clicked."""
+        for widget in frame.winfo_children():
+            # .winfo_children gets each children widget of the frame
+            widget.destroy()
+
     def game(self):
         """Runs the main game."""
         # Clears the window
-        for widget in self.root.winfo_children():
-            widget.destroy()
+        self.clear_frame(self.root)
 
         def use_action(item):
             """Updates main text and inventory when the player uses an item."""
-
             result = player.use(item)
 
             if player.win == True:
@@ -250,18 +254,19 @@ class App:
             """Updates the main text box when the player inspects something."""
             inspect_input = inspect_entry.get().lower().strip()
 
-            if inspect_input:
+            if inspect_input:  # If not empty,
                 update_text(player.current_loc.inspect(inspect_input))
             else:
                 update_text("Please enter an item to inspect.")
 
+            # Delete the text in entry box after submitting
             inspect_entry.delete(0, 'end')
 
         def take_action():
             """Updates the main text box and inventory when the player takes something."""
             take_input = take_entry.get().lower().strip()
 
-            if take_input:
+            if take_input:  # If not empty
                 result = player.take(take_input)
                 update_text(result)
                 update_inv_display()
@@ -272,10 +277,7 @@ class App:
 
         def update_inv_display():
             """Updates inventory display when an item is used or taken."""
-
-            for widget in inv_items_frame.winfo_children():
-                widget.destroy()
-
+            self.clear_frame(inv_items_frame)
             # for item in player.inv:
             #     item_button = Button(inv_items_frame, text=item.title(),
             #                          command=lambda item=item: use_action(item))
@@ -288,16 +290,10 @@ class App:
 
             for i, item in enumerate(player.inv):
                 # For each iteration of the inventory items,
-                # put the inventory buttons in the next column
+                # put the inventory buttons in the next column of the grid
                 item_button = tk.Button(inv_items_frame, text=item.title(), font=("Calibri", 12),
                                         command=lambda item=item: use_action(item))
                 item_button.grid(row=0, column=i, sticky="ns", padx=5, pady=10)
-
-        def clear_move_frame():
-            """Clears the move button frame after a button is clicked."""
-            for widget in move_frame.winfo_children():
-                # .winfo_children gets each children widget of the frame
-                widget.destroy()
 
         def update_text(new_string):
             """Adds new text to the main text box."""
@@ -307,20 +303,25 @@ class App:
             main_text.see('end')  # Scrolls to end of text box
             main_text.config(state='disabled')  # Re-disables the text widget
 
+        # Frame containing all move buttons
+        move_frame = tk.Frame(self.root, bg="light grey", padx=10, pady=10)
+        move_frame.grid(row=1, column=0, sticky="nsew", rowspan=2)
+
         def tkinter_update_move(dest):
             """Moves player when button is clicked, adds new text, and replaces buttons."""
-            player.move(dest)
-            update_text(player.current_loc)
-            clear_move_frame()
-            create_main_move_button()
+            player.move(dest)  # Move player
+            update_text(player.current_loc)  # Update text
+            self.clear_frame(move_frame)  # Clears move frame
+            create_main_move_button()  # Creates the move button again
 
         def create_main_move_button():
             """Creates main move button"""
             main_move_button = tk.Button(
                 move_frame,
                 text='Move', width=20, font=("Calibri", 14),
-                # command = creates new buttons for each direction
-                command=lambda: [clear_move_frame(), create_move_buttons()]
+                # command -> creates new buttons for each direction
+                command=lambda: [self.clear_frame(
+                    move_frame), create_move_buttons()]
             )
 
             # main_move_button.place(relx=.5, rely=.5, anchor="c")
@@ -328,7 +329,6 @@ class App:
 
         def create_move_buttons():
             """"Makes separate buttons for each location. Runs after main move button is clicked."""
-
             # Makes buttons evenly sized in the frame
             rel_height = 1 / len(player.current_loc.dests)
 
@@ -351,6 +351,19 @@ class App:
 
         # Creates main move button
         create_main_move_button()
+
+        # Delete placeholder when entry widget is clicked on
+        def on_focus_in(entry):
+            # .cget returns value
+            if entry.cget('state') == 'disabled':
+                entry.configure(state='normal')
+                entry.delete(0, 'end')
+
+        # Insert placeholder when entry widget is not focused on
+        def on_focus_out(entry, placeholder):
+            if entry.get() == "":
+                entry.insert(0, placeholder)
+                entry.configure(state='disabled')
 
         # Frame for the text and scrollbar
         main_text_frame = tk.Frame(self.root)
@@ -375,53 +388,69 @@ class App:
         # Configure the text widget to use the scrollbar
         main_text.config(yscrollcommand=text_scrollbar.set)
 
-        # Frame containing all move buttons
-        move_frame = tk.Frame(self.root, bg="light grey", padx=10, pady=10)
-        move_frame.grid(row=1, column=0, sticky="nsew", rowspan=2)
-
         # Create frame around entry input boxes and buttons
         entry_frame = tk.Frame(self.root)
         entry_frame.grid(row=1, column=1, pady=5, sticky="nswe")
 
+        # Entry widget for inspecting
         inspect_entry = tk.Entry(entry_frame, highlightbackground="black",
                                  highlightthickness=1, font=("Calibri", 12))
         inspect_entry.grid(row=0, column=0, sticky="ew", padx=5)
+        # Insert placeholder
+        inspect_entry.insert(0, "Type here to inspect...")
+        inspect_entry.configure(state='disabled', disabledbackground="white")
 
+        # Button to submit the inspect item
         inspect_btn = tk.Button(entry_frame, text="Inspect!", font=("Calibri", 12),
                                 width=10, command=inspect_action)
         inspect_btn.grid(row=0, column=1, pady=1, padx=(0, 5))
 
-        # take_frame = tk.Frame(entry_frame)
-        # take_frame.pack(fill="both", padx=5)
-
+        # Entry box for take action
         take_entry = tk.Entry(entry_frame, highlightbackground="black",
                               highlightthickness=1, font=("Calibri", 12))
         # take_entry.pack(side=""left"", fill=X, expand=True)
         take_entry.grid(row=1, column=0, sticky="ew", padx=5)
+        take_entry.insert(0, "Type here to take...")  # placeholder text
+        take_entry.configure(state='disabled', disabledbackground="white")
 
         take_btn = tk.Button(entry_frame, text="Take!", width=10,
                              font=("Calibri", 12), command=take_action)
         # take_btn.pack(side="right", padx=(5, 0))
         take_btn.grid(row=1, column=1, pady=1, padx=(0, 5))
 
+        # Give entry widgets more weight than their respective buttons
         entry_frame.grid_columnconfigure(0, weight=1)
 
+        # Placeholders and binds (on click) for the inspect and entry boxes-----
+        inspect_entry.bind('<Button-1>', lambda _: on_focus_in(inspect_entry))
+        inspect_entry.bind('<FocusOut>', lambda _: on_focus_out(
+            inspect_entry, 'Type here to inspect...'))
+
+        take_entry.bind('<Button-1>', lambda _: on_focus_in(take_entry))
+        take_entry.bind('<FocusOut>', lambda _: on_focus_out(
+            take_entry, 'Type here to take...'))
+        # -----------------------------------------------------------------------
+
+        # Frame for the whole inventory display
         inv_frame = tk.Frame(self.root)
         inv_frame.grid(row=2, column=1, sticky="nswe")
 
+        # Inventory master label
         inv_heading_label = tk.Label(
             inv_frame, text="Click to Use an Item in Your Inventory:", font=("Calibri", 12))
         inv_heading_label.grid(row=0, column=0, sticky="nwes")
 
+        # Frame for the specific item buttons
         inv_items_frame = tk.Frame(inv_frame)
         inv_items_frame.grid(row=1, column=0)
 
+        # When the player has items, this label is destroyed.
         inv_empty_text = tk.Label(
             inv_items_frame, text="Your Inventory is Empty.", font=("Calibri", 12))
         inv_empty_text.grid(row=0, column=0, sticky="nwes")
 
         inv_frame.grid_columnconfigure(0, weight=1)
-        # The frame doesn't shrink to fit contents
+        # Ensures the frame doesn't shrink to fit contents
         inv_frame.grid_propagate(False)
 
         # -----------------ratios/weights of grid---------
@@ -451,8 +480,7 @@ class App:
     def win_window(self):
         """The win screen."""
 
-        for widget in self.root.winfo_children():
-            widget.destroy()
+        self.clear_frame(self.root)
 
         win_label = tk.Label(
             self.root, text="Congratulations, You Win!", font=("Calibri", 20), fg="green")
@@ -468,8 +496,7 @@ class App:
     def lose_window(self):
         """The lose screen"""
 
-        for widget in self.root.winfo_children():
-            widget.destroy()
+        self.clear_frame(self.root)
 
         lose_label = tk.Label(
             self.root, text="Game Over, You Lose!", font=("Calibri", 20), fg="red")
@@ -478,9 +505,6 @@ class App:
         lose_text = tk.Label(
             self.root, text="You start to use your crowbar to dig at the hole under the fence. Unfortunately, the guard catches you trying to escape. He knocks you unconscious and drags you back to your cell. Better luck next time!", font=("Calibri", 14), wraplength=400)
         lose_text.place(relx=0.5, rely=0.6, anchor="center")
-
-        # start_button = Button(root, text="Start the game!", command=game)
-        # start_button.pack(anchor="center", expand=True)
 
 
 if __name__ == "__main__":
